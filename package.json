@@ -1,7 +1,7 @@
 {
   "name": "@invokd/ai-utils",
   "license": "Apache-2.0",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Utilities for working with AI tools",
   "type": "module",
   "author": "Dhravya Shah <dhravya@cloudflare.com>",
@@ -15,10 +15,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240620.0",
+    "@cloudflare/workers-types": "^4.20250503.0",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20.14.8",
-    "esbuild": "^0.21.5",
+    "esbuild": "^0.25.3",
     "prettier": "^3.3.2",
     "typescript": "^5.5.2",
     "yaml": "^2.4.5",
@@ -32,15 +32,15 @@
   "bugs": {
     "url": "https://github.com/keshav0001/ai-utils/issues"
   },
-  "directories": {
-    "example": "examples"
-  },
   "keywords": [
     "cloudflare",
     "runwithtools",
     "max_token",
     "temperature"
   ],
+  "directories": {
+    "example": "examples"
+  },
   "dependencies": {
     "undici-types": "^6.19.8"
   }
