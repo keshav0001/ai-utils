@@ -17,6 +17,8 @@ import { AiTextGenerationToolInputWithFunction } from "./types";
  * @param {Object} input - The input for the runWithTools call.
  * @param {RoleScopedChatInput[]} input.messages - The messages to be sent to the AI.
  * @param {AiTextGenerationToolInputWithFunction[]} input.tools - The tools to be used. You can also pass a function along with each tool that will automatically run the tool with the arguments passed to the function. The function arguments are type-checked against your tool's parameters, so you can get autocomplete and type checking in your IDE.
+ * @param {number} [input.max_tokens] - The maximum number of tokens to generate.
+ * @param {number} [input.temperature] - The temperature to use for the generation.
  * @param {Object} config - Configuration options for the runWithTools call.
  * @param {boolean} [config.streamFinalResponse=false] - Whether to stream the final response or not.
  * @param {number} [config.maxRecursiveToolRuns=0] - The maximum number of recursive tool runs to perform.
@@ -48,6 +50,8 @@ export const runWithTools = async (
 		strictValidation?: boolean;
 		/** Whether to enable verbose logging. */
 		verbose?: boolean;
+		max_tokens?: number;
+		temperature?: number;
 
 		/** Automatically decides the best tools to use for a given task. */
 		trimFunction?: (
@@ -70,6 +74,8 @@ export const runWithTools = async (
 			messages: RoleScopedChatInput[],
 		) => tools as AiTextGenerationToolInputWithFunction[],
 		strictValidation = false,
+		max_tokens=512,
+		temperature=0.6,
 	} = config;
 
 	// Enable verbose logging if specified in the config
@@ -108,12 +114,16 @@ export const runWithTools = async (
 		ai,
 		model,
 		messages,
+		max_tokens,
+		temperature,
 		streamFinalResponse,
 		maxRecursiveToolRuns,
 	}: {
 		ai: Ai;
 		model: BaseAiTextGenerationModels;
 		messages: RoleScopedChatInput[];
+		max_tokens?: number;
+		temperature?: number;
 		streamFinalResponse: boolean;
 		maxRecursiveToolRuns: number;
 	}): Promise<AiTextGenerationOutput> {
@@ -127,6 +137,8 @@ export const runWithTools = async (
 				messages: messages,
 				stream: false,
 				tools: tools,
+				max_tokens: max_tokens,
+				temperature: temperature,
 			})) as {
 				response?: string;
 				tool_calls?: {
@@ -226,6 +238,8 @@ export const runWithTools = async (
 					ai,
 					model,
 					messages,
+					max_tokens,
+					temperature,
 					streamFinalResponse,
 					maxRecursiveToolRuns,
 				});
@@ -237,6 +251,8 @@ export const runWithTools = async (
 				const finalResponse = await ai.run(model, {
 					messages: messages,
 					stream: streamFinalResponse,
+					max_tokens: max_tokens,
+					temperature: temperature,
 				});
 				totalCharacters += JSON.stringify(messages).length;
 				Logger.info(
@@ -260,6 +276,8 @@ export const runWithTools = async (
 			ai,
 			model,
 			messages,
+			max_tokens,
+			temperature,
 			streamFinalResponse,
 			maxRecursiveToolRuns,
 		});

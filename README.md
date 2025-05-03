@@ -5,7 +5,7 @@ Includes support for embedded function calling, and more in the future!
 ### Installation
 
 ```bash
-npm install @cloudflare/ai-utils --save
+npm install @invokd/ai-utils --save
 ```
 
 ### What is this?
