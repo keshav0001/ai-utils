@@ -9,6 +9,11 @@ import {
 } from "@cloudflare/workers-types";
 import { AiTextGenerationToolInputWithFunction } from "./types";
 
+// interface to return both messages and finalresponse
+interface RunWithToolsResponse {
+	response: AiTextGenerationOutput;
+	messages: RoleScopedChatInput[];
+}
 /**
  * Runs a set of tools on a given input and returns the final response in the same format as the AI.run call.
  *
@@ -28,6 +33,7 @@ import { AiTextGenerationToolInputWithFunction } from "./types";
  *
  * @returns {Promise<AiTextGenerationOutput>} The final response in the same format as the AI.run call.
  */
+
 export const runWithTools = async (
 	/** The AI instance to use for the run. */
 	ai: Ai,
@@ -61,7 +67,7 @@ export const runWithTools = async (
 			messages: RoleScopedChatInput[],
 		) => Promise<AiTextGenerationToolInputWithFunction[]>;
 	} = {},
-): Promise<AiTextGenerationOutput> => {
+): Promise<RunWithToolsResponse> => {
 	// Destructure config with default values
 	const {
 		streamFinalResponse = false,
@@ -74,8 +80,8 @@ export const runWithTools = async (
 			messages: RoleScopedChatInput[],
 		) => tools as AiTextGenerationToolInputWithFunction[],
 		strictValidation = false,
-		max_tokens=512,
-		temperature=0.6,
+		max_tokens = 512,
+		temperature = 0.6,
 	} = config;
 
 	// Enable verbose logging if specified in the config
@@ -126,7 +132,7 @@ export const runWithTools = async (
 		temperature?: number;
 		streamFinalResponse: boolean;
 		maxRecursiveToolRuns: number;
-	}): Promise<AiTextGenerationOutput> {
+	}): Promise<RunWithToolsResponse> {
 		try {
 			Logger.info("Starting AI.run call");
 			Logger.info("Messages", JSON.stringify(messages, null, 2));
@@ -217,14 +223,13 @@ export const runWithTools = async (
 							role: "tool",
 							content: `Error executing tool ${selectedTool.name}: ${(error as Error).message}`,
 							name: selectedTool.name,
-							
 						});
 					}
 				} else {
 					Logger.error(
 						`Function for tool ${toolCallObjectJson.name} is undefined`,
 					);
-          return response
+					return response;
 				}
 			});
 
@@ -247,19 +252,22 @@ export const runWithTools = async (
 					"Max recursive tool runs reached, generating final response",
 				);
 
-				const finalResponse = await ai.run(model, {
+				const finalResponse = (await ai.run(model, {
 					messages: messages,
 					stream: streamFinalResponse,
 					max_tokens: max_tokens,
 					temperature: temperature,
-				}) as AiTextGenerationOutput;
+				})) as AiTextGenerationOutput;
 				totalCharacters += JSON.stringify(messages).length;
 				Logger.info(
 					`Number of characters for the final AI.run call: ${JSON.stringify(messages).length}`,
 				);
 
 				Logger.info(`Total number of characters: ${totalCharacters}`);
-				return finalResponse;
+				return {
+					response: finalResponse,
+					messages: messages,
+				};
 			}
 		} catch (error) {
 			Logger.error("Error in runAndProcessToolCall:", error);
