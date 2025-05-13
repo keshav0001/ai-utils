@@ -169,7 +169,7 @@ export const runWithTools = async (
 				const toolCallObjectJson = toolCall;
 
 				messages.push({
-					role: "assistant",
+					role: "tool",
 					content: JSON.stringify(toolCallObjectJson),
 				});
 
