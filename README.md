@@ -14,6 +14,12 @@ This package contains a set of utilities to make it easier to work with the [Clo
 
 To learn more about function calling and its usage on Cloudflare, refer to the documentation here: [Cloudflare Function Calling Documentation](https://developers.cloudflare.com/workers-ai/function-calling/).
 
+### Recent Changes
+
+- **Improved Tool Call Handling**: Message history now accurately reflects tool execution, using the `tool` role for results from tool calls (Commit `2d29c75`). This provides a clearer and more structured conversation flow when inspecting messages.
+- **Advanced `runWithTools` Example**: A new comprehensive example demonstrating advanced features of `runWithTools`—including recursive tool calls, verbose logging, streaming, and model parameter configuration—has been added. You can find it at `examples/runWithTools-advanced/index.ts`.
+- **Enhanced `runWithTools` Documentation**: The main usage example for `runWithTools` has been updated to better illustrate how to handle the `response` object (both streaming and non-streaming cases) and the `messages` array returned by the function.
+
 This package contains the following utilities:
 
 ### `runWithTools`
@@ -75,22 +81,51 @@ const r = await runWithTools(
 	{
 		strictValidation: true,
 		maxRecursiveToolRuns: 1,
-		streamFinalResponse: true,
+		streamFinalResponse: true, // Let's assume this is passed to runWithTools config
 		// If there's too many tools, you can enable this
 		trimFunction: autoTrimTools,
 	},
 );
+
+// The runWithTools function returns an object with two properties:
+// - response: The final response from the AI. This will be a ReadableStream of AiTextGenerationOutput chunks if streamFinalResponse is true.
+// - messages: An array of all messages exchanged during the execution, including original user messages, tool calls, and tool responses.
+
+const { response, messages } = r;
+
+// Example of how to handle the response:
+if (response instanceof ReadableStream) { // Check if response is a stream
+  // Handle streaming response
+  let fullResponse = "";
+  const reader = response.getReader();
+  // const decoder = new TextDecoder(); // Not strictly needed if value.response is always a string
+  while (true) {
+    const { done, value } = await reader.read(); // value is AiTextGenerationOutput: { response?: string; tool_calls?: ToolCall[] }
+    if (done) break;
+    if (value && value.response) {
+      fullResponse += value.response; // Accumulate the string chunk
+    }
+  }
+  console.log("Final streamed response:", fullResponse);
+} else {
+  // Handle non-streaming response (response is AiTextGenerationOutput)
+  console.log("Final response:", response.response);
+}
+
+console.log("All messages exchanged:", messages);
 ```
+
+For a more detailed example covering advanced features like recursion, verbose logging, and complex tool interactions, please see `examples/runWithTools-advanced/index.ts`.
 
 You may also use the `tool()` function, which is a helper that provides type completions for the function arguments and the tool, so you can create tools from outside the `runWithTools` function and still enjoy type safety.
 
 ```ts
-import { tool } from "@cloudflare/ai-utils"
+import { tool } from "@invokd/ai-utils" // Ensure this matches the installation package name
 
 const ourTool = tool({
 	name: "ourTool"
-	...
-	function: async (args) => {...}
+	// ... (rest of tool definition)
+	function: async (args) => { /* ... */ }
 })
 ```
 
@@ -169,7 +204,7 @@ const r = await runWithTools(
 			},
 		],
 		tools: [
-			tool({
+			tool({ // Using the tool() helper for better type safety
 				name: "Save information",
 				description: "Info save about the user",
 				parameters: {
@@ -193,6 +228,7 @@ const r = await runWithTools(
 			}),
 		],
 	},
+	// Config object for runWithTools can be added here if needed
 );
 ```
 
